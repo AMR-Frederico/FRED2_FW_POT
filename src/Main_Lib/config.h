@@ -58,7 +58,8 @@
 // -------------------------------------------------------
 
 #define SATURATION 1020
-#define FREQUENCIA 1000  
+#define FREQUENCIA 1000 
+#define RESOLUTION 10 
 #define PWM_SATURATION_UNDER 0
 
 #define CANAL_M1 0
@@ -72,15 +73,19 @@
 // Robot kinematics
 // -------------------------------------------------------
 
-#define L 0.3
+#define WHEELS_SEPARATION 0.45
 
-#define RADIUS 0.075
+#define WHEEL_RADIUS 0.075
 
 #define MAX_PWM 1020
 #define MIN_PWM -1020
 
-#define MAX_RPM 1000
-#define MIN_RPM -1000
+#define MAX_RPM 500
+#define MIN_RPM -500
+
+#define DEADBAND_RPM 10
+
+#define NONLINEARITY_EXPONENT 1.3 
 
 #define MAX_SPEED_LINEAR 10 //m/s 
 #define MAX_SPEED_ANGULAR 3.141592653589*2 //rad/s 

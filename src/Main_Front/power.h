@@ -53,37 +53,66 @@ void write_PWM(motor motor, int vel){
 
 
 // -------------------------------------------------------
+// Converts m/s to rad/s
+// -------------------------------------------------------
+
+float meters2rad(float linear_vel){
+
+  float cmd_rad = linear_vel/WHEEL_RADIUS; 
+
+  return cmd_rad; 
+}
+
+
+// -------------------------------------------------------
+// Converts rad/s to rpm
+// -------------------------------------------------------
+
+float rad2rpm(float angular_vel){
+  //convert from angular w to rpm 
+  
+  float rpm_cmd_vel = (angular_vel*60.0f)/(2.0f*PI)  ;
+
+  return rpm_cmd_vel;
+}
+
+
+// -------------------------------------------------------
 // Converts RPM to PWM
 // -------------------------------------------------------
 
-int rpm2pwm(float speed_rpm){
+int rpm2pwm(float rpm){
 
-//scale convertion 
-// rpm - 0        pwm - 0
-// ------   =   --------------
-// max_rpm        max_pwm 
+  // Handle direction separately
+  bool reverse = false;
+  if (rpm < 0) {
+      reverse = true;
+      rpm = -rpm;
+  }
 
-  float desired_pwm = 0;
+  // Deadband: if rpm is too small, just return 0
+  if (rpm <= DEADBAND_RPM) return 0;
 
-  desired_pwm = (speed_rpm*MAX_PWM)/MAX_RPM;
+  // Clamp to max RPM
+  rpm = fmin(rpm, MAX_RPM);
 
-  return desired_pwm; 
-}
+  // Apply nonlinear scaling
+  float scaled = pow(rpm / MAX_RPM, NONLINEARITY_EXPONENT);
 
+  // Map to PWM range
+  int pwm = static_cast<int>(round(scaled * MAX_PWM));
 
+  // Ensure within valid PWM bounds
+  pwm = constrain(pwm, 0, MAX_PWM);
 
-
-// -------------------------------------------------------
-// Converts RAD/S to RPM
-// -------------------------------------------------------
-
-float angular2rpm(float speed_angular){
-  //convert from angular w to rpm 
+  // Return signed PWM (positive/negative indicates direction)
+  return reverse ? -pwm : pwm;
   
-  float desired_rpm = (speed_angular*60)/(2*PI)  ;
-
-  return desired_rpm;
 }
+
+
+
+
 
 
 
@@ -93,10 +122,7 @@ float angular2rpm(float speed_angular){
 // Receives the RPM command to sent PWM for both motors 
 // -------------------------------------------------------
 
-void write2motors(int rpm_left, int rpm_right) {
-
-  pwm_left  = rpm2pwm(rpm_left);
-  pwm_right = rpm2pwm(rpm_right);
+void write2motors(int pwm_left, int pwm_right) {
 
   write_PWM(motor1, pwm_right); 
   write_PWM(motor2, pwm_left); 

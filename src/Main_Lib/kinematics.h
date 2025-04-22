@@ -1,57 +1,63 @@
-
 #include <Main_Lib/config.h>
 
-
-
-float cmd_rpm; 
-bool debug = false; 
-
-
-
+// Global variables
+float cmd_rpm;   // Global command RPM setpoint
+bool debug = false; // Debug mode flag
 
 // -------------------------------------------------------
-// Kinematics debug function
+// Kinematics debug control
 // -------------------------------------------------------
 
-bool debugControl(){
+/**
+ * @brief Returns the current debug mode status.
+ * 
+ * @return true if debug mode is enabled, false otherwise.
+ */
+bool debugControl() {
   return debug;
 }
 
-
-
-
 // -------------------------------------------------------
-// Kinematics debug function
+// Get RPM setpoint
 // -------------------------------------------------------
 
-float getRPMsetpoint(){
-    return cmd_rpm; 
+/**
+ * @brief Returns the current RPM setpoint.
+ * 
+ * @return Current command RPM.
+ */
+float getRPMsetpoint() {
+  return cmd_rpm;
 }
 
-
-
-
 // -------------------------------------------------------
-// Return left wheel speed in rad/s
+// Calculate left wheel angular velocity
 // -------------------------------------------------------
 
-float kinematics_left(float linear, float angular, float gain){
-
-  return gain*(linear - angular*L);
+/**
+ * @brief Calculate the left wheel speed based on robot kinematics.
+ * 
+ * @param linear  Linear velocity (m/s).
+ * @param angular Angular velocity (rad/s).
+ * @param gain    Gain factor (e.g., for calibration or scaling).
+ * @return Left wheel angular velocity (rad/s).
+ */
+float kinematics_left(float linear, float angular, float gain) {
+  return gain * (linear - angular * WHEELS_SEPARATION / 2.0);
 }
 
-
-
-
 // -------------------------------------------------------
-// Return right wheel speed in rad/s
+// Calculate right wheel angular velocity
 // -------------------------------------------------------
- 
-float kinematics_right(float linear, float angular, float gain){
 
-  return gain*(linear + angular*L);
+/**
+ * @brief Calculate the right wheel speed based on robot kinematics.
+ * 
+ * @param linear  Linear velocity (m/s).
+ * @param angular Angular velocity (rad/s).
+ * @param gain    Gain factor (e.g., for calibration or scaling).
+ * @return Right wheel angular velocity (rad/s).
+ */
+float kinematics_right(float linear, float angular, float gain) {
+  return gain * (linear + angular * WHEELS_SEPARATION / 2.0);
 }
-
-
-
-

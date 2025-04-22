@@ -1,135 +1,162 @@
-
 #include <Main_Lib/motor.h>
 #include <Main_Lib/tools.h>
 #include <Main_Lib/config.h>
 
 // fred(linear(m/s),angular(rad/s)) -> |cinematic| -> wheel(angular(rad/s)) -> |angular2rpm| -> wheel(angular(rpm)) -> |rpm2pwm| -> wheel(pwm)
 
-//@vel PWM signal between 0 and 1023 
-// postive our negative representes de direction, positive been forward
+// @vel: PWM signal between 0 and 1023
+// Positive or negative represents direction (positive = forward)
 
-motor motor1(BM1_IN1, BM1_IN2, BM1_PWM, 0);
-motor motor2(BM2_IN1, BM2_IN2, BM2_PWM, 1);
+motor motor1(BM1_IN1, BM1_IN2, BM1_PWM, 0); // Motor 1 instance
+motor motor2(BM2_IN1, BM2_IN2, BM2_PWM, 1); // Motor 2 instance
 
-
-int pwm_right = 0 ;
-int pwm_left = 0  ; 
+// Global variables
+int pwm_right = 0;
+int pwm_left = 0;
 int pwm_motor = 0;
-
-
-
 
 // -------------------------------------------------------
 // Stop motors function
 // -------------------------------------------------------
 
-void stop(motor motor){
+/**
+ * @brief Stop the motor by setting both direction pins HIGH and PWM to 0.
+ * 
+ * @param motor Motor object to be stopped.
+ */
+void stop(motor motor) {
   digitalWrite(motor.In_A, HIGH);  
   digitalWrite(motor.In_B, HIGH);
-  ledcWrite(motor.Canal ,0);
+  ledcWrite(motor.Canal, 0);
 }
 
-
-
 // -------------------------------------------------------
-// Write the PWM command at the motor driver
+// Write the PWM command to the motor driver
 // -------------------------------------------------------
 
-void write_PWM(motor motor, int vel){
+/**
+ * @brief Write a PWM signal to the motor driver, setting speed and direction.
+ *        Values are saturated within [-SATURATION, +SATURATION].
+ * 
+ * @param motor Motor object to be controlled.
+ * @param vel   PWM value (signed) to set speed and direction.
+ */
+void write_PWM(motor motor, int vel) {
 
-  //satured output
+  // Saturate output
+  if (vel >= SATURATION) vel = SATURATION;
+  if (vel <= -SATURATION) vel = -SATURATION;
 
-  if(vel>=SATURATION){
-    vel = SATURATION;
-  }
-  if(vel<= -SATURATION){
-    vel = -SATURATION;
-  }
-
-  ledcWrite(motor.Canal ,abs(vel));
+  ledcWrite(motor.Canal, abs(vel));
   digitalWrite(motor.In_B, vel < 0);
   digitalWrite(motor.In_A, vel > 0);  
 }
 
+// -------------------------------------------------------
+// Converts linear velocity (m/s) to angular velocity (rad/s)
+// -------------------------------------------------------
+
+/**
+ * @brief Convert a linear velocity (m/s) into wheel angular velocity (rad/s).
+ * 
+ * @param linear_vel Linear velocity (meters per second).
+ * @return Angular velocity (radians per second).
+ */
+float meters2rad(float linear_vel) {
+  float cmd_rad = linear_vel / WHEEL_RADIUS;
+  return cmd_rad;
+}
+
+// -------------------------------------------------------
+// Converts angular velocity (rad/s) to RPM
+// -------------------------------------------------------
+
+/**
+ * @brief Convert angular velocity (rad/s) into wheel rotational speed (RPM).
+ * 
+ * @param angular_vel Angular velocity (radians per second).
+ * @return Rotational speed (RPM).
+ */
+float rad2rpm(float angular_vel) {
+  float rpm_cmd_vel = (angular_vel * 60.0f) / (2.0f * PI);
+  return rpm_cmd_vel;
+}
 
 // -------------------------------------------------------
 // Converts RPM to PWM
 // -------------------------------------------------------
 
-int rpm2pwm(float speed_rpm){
+/**
+ * @brief Convert a RPM command into a PWM signal.
+ *        Handles deadband, direction, and nonlinear scaling.
+ * 
+ * @param rpm Rotational speed (signed RPM).
+ * @return PWM value (signed).
+ */
+int rpm2pwm(float rpm) {
 
-//scale convertion 
-// rpm - 0        pwm - 0
-// ------   =   --------------
-// max_rpm        max_pwm 
-
-  float desired_pwm = 0;
-
-  desired_pwm = (speed_rpm*MAX_PWM)/MAX_RPM;
-
-  return desired_pwm; 
-}
-
-
-
-
-// -------------------------------------------------------
-// Converts RAD/S to RPM
-// -------------------------------------------------------
-
-float angular2rpm(float speed_angular){
-  //convert from angular w to rpm 
-  
-  float desired_rpm = (speed_angular*60)/(2*PI)  ;
-
-  return desired_rpm;
-}
-
-
-
-
-
-// -------------------------------------------------------
-// Receives the RPM command to sent PWM for both motors 
-// -------------------------------------------------------
-
-void write2motors(int rpm_left, int rpm_right) {
-
-  pwm_left  = rpm2pwm(rpm_left);
-  pwm_right = rpm2pwm(rpm_right);
-
-  write_PWM(motor1, pwm_right); 
-  write_PWM(motor2, pwm_left); 
-}
-
-
-
-
-// -------------------------------------------------------
-// Receives the RPM command to sent PWM for a single motor 
-// -------------------------------------------------------
-
-void write2motor(int rpm,int motor){
-  pwm_motor = rpm2pwm(rpm);
-
-  switch (motor)  {
-    case 1:
-       write_PWM(motor1,pwm_motor);
-        break;
-
-    case 2:
-       write_PWM(motor2,pwm_motor);
-        break;
-    default:
-          write_PWM(motor1,pwm_motor);
+  // Handle direction separately
+  bool reverse = false;
+  if (rpm < 0) {
+    reverse = true;
+    rpm = -rpm;
   }
 
+  // Deadband: if RPM is too small, return 0
+  if (rpm <= DEADBAND_RPM) return 0;
+
+  // Clamp to max RPM
+  rpm = fmin(rpm, MAX_RPM);
+
+  // Apply nonlinear scaling
+  float scaled = pow(rpm / MAX_RPM, NONLINEARITY_EXPONENT);
+
+  // Map to PWM range
+  int pwm = static_cast<int>(round(scaled * MAX_PWM));
+
+  // Ensure PWM is within valid bounds
+  pwm = constrain(pwm, 0, MAX_PWM);
+
+  // Return signed PWM based on original direction
+  return reverse ? -pwm : pwm;
 }
 
+// -------------------------------------------------------
+// Send PWM commands to both motors
+// -------------------------------------------------------
 
+/**
+ * @brief Write PWM commands to both motors simultaneously.
+ * 
+ * @param pwm_left  PWM value for left motor.
+ * @param pwm_right PWM value for right motor.
+ */
+void write2motors(int pwm_left, int pwm_right) {
+  write_PWM(motor1, pwm_right);
+  write_PWM(motor2, pwm_left);
+}
 
+// -------------------------------------------------------
+// Send PWM command to a single motor
+// -------------------------------------------------------
 
+/**
+ * @brief Write a RPM command to a single motor.
+ * 
+ * @param rpm   RPM command to be sent.
+ * @param motor Motor selector (1 = motor1, 2 = motor2).
+ */
+void write2motor(int rpm, int motor) {
+  pwm_motor = rpm2pwm(rpm);
 
-
-
-
+  switch (motor) {
+    case 1:
+      write_PWM(motor1, pwm_motor);
+      break;
+    case 2:
+      write_PWM(motor2, pwm_motor);
+      break;
+    default:
+      write_PWM(motor1, pwm_motor); // Default to motor1 if invalid input
+  }
+}

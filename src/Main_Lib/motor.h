@@ -23,7 +23,7 @@ motor::motor(int IN_A, int IN_B,int PWM, int CANAL)
     pinMode(In_A,OUTPUT);
     pinMode(In_B,OUTPUT);
     ledcAttachPin(Pwm, Canal);
-    ledcSetup(Canal, FREQUENCIA, 10);
+    ledcSetup(Canal, FREQUENCIA, RESOLUTION);
     digitalWrite(In_A, LOW);
     digitalWrite(In_B, LOW);
 
