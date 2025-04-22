@@ -1,220 +1,181 @@
-#include "micro_ros.h"
-#include "power.h"
 #include <Arduino.h>
-#include <Main_Lib/config.h>
-#include <Main_Lib/controler.h>
-#include <Main_Lib/rampa.h>
-#include <Main_Lib/kinematics.h>
-
-// TODO
-// stil need to add some topics
-// divide task in two cores
-//  write docs
-
-// -------------------------------------------------------
-// Encoder config
-// -------------------------------------------------------
-
 #include <Main_Lib/encoder.h>
-Encoder encoder(34, 35, 36,39);
-
-
-
-// -------------------------------------------------------
-// Median filter config
-// -------------------------------------------------------
-
 #include <Main_Lib/MedianFilter.h>
-MedianFilter encoderRightFilter(33, 0);
-MedianFilter encoderLeftFilter(33, 0);
+#include <Main_Lib/micro_ros.h>
+#include <Main_Lib/kinematics.h>
+#include "power.h"
+#include <Main_Lib/pid_controller.h>
 
+RosData ros_data; // Instance of our RosData struct
 
+Encoder encoder(34, 35, 36,39);   // Encoder pins
 
-// -------------------------------------------------------
-// PID controller config
-// -------------------------------------------------------
+MedianFilter encoder_right_filter(33, 0); 
+MedianFilter encoder_left_filter(33, 0); 
 
-#include <Main_Lib/controler.h>
-Controler esquerda_controler(1, 0, 0); //(p,i,d)
-Controler direita_controler(1, 0, 0);  //(p,i,d) ->0.4
+Controller left_wheel(1.0f, 0.0f, 0.0f, 255.0f); 
+Controller right_wheel(1.0f, 0.0f, 0.0f, 255.0f); 
 
+void setup() {
+  // Serial.begin(115200);
 
+  // -------------------------------------------------------
+  // Microros and encoder initialization 
+  // -------------------------------------------------------
+  init_ros("fred2_fw_motors", "back");
 
-
-// -------------------------------------------------------
-// RAMP
-// -------------------------------------------------------
-
-const int ACC = 50;
-
-
-
-// -------------------------------------------------------
-// Kinematics velocity gain
-// -------------------------------------------------------
-
-const int GAIN = 10;
-const int GAIN_ANGULAR = 7;
-
-
-// -------------------------------------------------------
-// Micro-ros connection status 
-// -------------------------------------------------------
-
-bool _connect = false;
-
-
-
-// -------------------------------------------------------
-// Velocity variables
-// -------------------------------------------------------
-
-float rpm_right = 0;
-float rpm_left = 0;
-
-float rpm = 0;
-float rpm_controled = 0;
-
-float controled_RPM_right;
-float controled_RPM_left;
-
-
-
-
-// -------------------------------------------------------
-// Inicialization
-// -------------------------------------------------------
-
-void setup()
-{
-  init_ros();
   encoder.setup();
 }
 
-
-
-
-// -------------------------------------------------------
-// Loop
-// -------------------------------------------------------
-
-void loop()
-{
+void loop() {
 
   // -------------------------------------------------------
   // Get cmd_vel from ROS
   // -------------------------------------------------------
+  float robot_linear_vel = getLinear(); 
+  float robot_angular_vel = -getAngular(); 
 
-  float linear = getLinear();   // robot
-  float angular = getAngular(); // robot
 
-  // debug = debugControl();
+  // -------------------------------------------------------
+  // Get data from encoder 
+  // -------------------------------------------------------
+  double angle_encoder_left = encoder.readAngle(LEFT);
+  double rpm_encoder_left =  encoder.readRPM(LEFT);
+  double ticks_encoder_left = encoder.readPulses(LEFT);
+
+  double angle_encoder_right = encoder.readAngle(RIGHT); 
+  double rpm_encoder_right = encoder.readRPM(RIGHT);
+  double ticks_encoder_right = encoder.readPulses(RIGHT);
+
+
+  // -------------------------------------------------------
+  // Median filter to throw outliers 
+  // -------------------------------------------------------
+  //TODO: test the behavior of the median filter
+  // encoder_left_filter.in(rpm_encoder_left); 
+  // rpm_encoder_left = encoder_left_filter.out(); 
+  
+  // encoder_right_filter.in(rpm_encoder_right); 
+  // rpm_encoder_right = encoder_right_filter.out(); 
 
 
 
   // -------------------------------------------------------
-  // Left wheel controller 
-  // -------------------------------------------------------
-
-  // Get wheel current angle and RPM and ticks
-  double angle_encoder_read_left = encoder.readAngle(LEFT);
-  double rpm_encoder_read_left = encoder.readRPM(LEFT);
-  double ticks_encoder_read_left = encoder.readPulses(LEFT);
-
-
-  // Use the median filter to trow outliers
-  encoderLeftFilter.in(rpm_encoder_read_left);
-  rpm_encoder_read_left = encoderLeftFilter.out();
-
-
-  // Use kinematics equation to convert robot vel for wheel speed 
-  float angular_speed_left = kinematics_left(linear, angular, GAIN); // wheel [rad/s]
-
-
-  // Converts rad/s to rpm
-  rpm_left = angular2rpm(angular_speed_left); // [RPM]
-
-
-  // Pass the command through a ramp -> not used 
-  // float rpm_left_com_rampa = rampa(rpm_left, 10, LEFT);
-  // rpm_left =  saturation(rpm_left,800);
-
-
-  // Pass the setpoint for the PID controller
-  // float controled_RPM_left = rpm_left;
-  float controled_RPM_left = esquerda_controler.output(rpm_left, rpm_encoder_read_left);
-
-
-
-
-
-  // -------------------------------------------------------
-  // Right wheel controller 
-  // -------------------------------------------------------
-
-  // Get wheel current angle and RPM and ticks
-  double angle_encoder_read_right = encoder.readAngle(RIGHT);
-  double rpm_encoder_read_right = encoder.readRPM(RIGHT);
-  double ticks_encoder_read_right = encoder.readPulses(RIGHT);
-
-
-  // Use the median filter to trow outliers
-  encoderRightFilter.in(rpm_encoder_read_right);
-  rpm_encoder_read_right = encoderRightFilter.out();
-
-
-  // Use kinematics equation to convert robot vel for wheel speed 
-  float angular_speed_right = kinematics_right(linear, angular, GAIN); // wheel [RAD/S]
-
-
-  // Converts rad/s to rpm
-  rpm_right = angular2rpm(angular_speed_right);            // [RPM]
-
-
-  // Pass the command through a ramp
-  // float rpm_right_com_rampa = rampa(rpm_right, 10, RIGHT); // not used
-
-
-  // Pass the setpoint for the PID controller
-  float controled_RPM_right = direita_controler.output(rpm_right, rpm_encoder_read_right); 
+  // Robot kinematics  - in m/s
+  // -------------------------------------------------------  
+  float left_wheel_vel = kinematics_left(robot_linear_vel, robot_angular_vel, 1.0); 
+  float right_wheel_vel = kinematics_right(robot_linear_vel, robot_angular_vel, 1.0); 
 
   
-
+  
   // -------------------------------------------------------
-  // Debug mode -> teste a single motor 
+  // Robot kinematics  - conversion from m/s to rad/s 
   // -------------------------------------------------------
+  float left_rad_cmd = meters2rad(left_wheel_vel); 
+  float right_rad_cmd = meters2rad(right_wheel_vel); 
 
-  if (debug)
-  {
-    rpm = getRPMsetpoint();
-    rpm_controled = direita_controler.output(rpm, rpm_encoder_read_right);
-    write2motor(rpm_controled, 2);
-    // write2motor(rpm,2);
-  }
+  
   
 
 
   // -------------------------------------------------------
-  // Send the velocity command to the motors
+  // Robot kinematics  - conversion from rad/s to rpm 
   // -------------------------------------------------------
+  float left_rpm_cmd = rad2rpm(left_rad_cmd); 
+  float right_rpm_cmd = rad2rpm(right_rad_cmd); 
 
-  if (!debug)
-  {
-    write2motors(controled_RPM_left, controled_RPM_right);
-  }
-
-
+  
+  
 
   // -------------------------------------------------------
-  // Send the data for ROS
+  // PID control for the wheels velocities
+  // -------------------------------------------------------
+  float controlled_RPM_left = left_wheel.compute(left_rpm_cmd, rpm_encoder_left); 
+  float controlled_RPM_right = right_wheel.compute(right_rpm_cmd, rpm_encoder_right); 
+
+  
+  
+  
+  
+  // -------------------------------------------------------
+  // Robot knimatics - conversion rpm to pwm 
+  // -------------------------------------------------------
+  float left_pwm_cmd = rpm2pwm(controlled_RPM_left); 
+  float right_pwm_cmd = rpm2pwm(controlled_RPM_right); 
+
+
+
+  // -------------------------------------------------------
+  // Send the comands to the motors
+  // -------------------------------------------------------
+  write2motors(int(left_pwm_cmd), int(right_pwm_cmd)); 
+
+
+  
+
+  // Serial.println("======= Kinematics Debug =======");
+
+  // Serial.print("Lin vel (m/s) L: ");
+  // Serial.print(left_wheel_vel, 4);
+  // Serial.print(" | R: ");
+  // Serial.print(right_wheel_vel, 4);
+  
+  // Serial.print(" || Ang vel (rad/s) L: ");
+  // Serial.print(left_rad_cmd, 4);
+  // Serial.print(" | R: ");
+  // Serial.print(right_rad_cmd, 4);
+  
+  // Serial.print(" || Setpoint RPM L: ");
+  // Serial.print(left_rpm_cmd, 2);
+  // Serial.print(" | R: ");
+  // Serial.print(right_rpm_cmd, 2);
+  
+  // Serial.print(" || Controlled RPM L: ");
+  // Serial.print(controlled_RPM_left, 2);
+  // Serial.print(" | R: ");
+  // Serial.print(controlled_RPM_right, 2);
+  
+  // Serial.print(" || PWM L: ");
+  // Serial.print(left_pwm_cmd, 0);
+  // Serial.print(" | R: ");
+  // Serial.println(right_pwm_cmd, 0);
+  
+  // Serial.println("================================");
+  // Serial.println();
+  
+
+  // delay(1000);
+  
+
+
+
+  // -------------------------------------------------------
+  // ROS data
   // -------------------------------------------------------
 
-  ros_loop(angular_speed_right, angular_speed_left,
-           angle_encoder_read_left, angle_encoder_read_right,
-           rpm_encoder_read_left, rpm_encoder_read_right,
-           ticks_encoder_read_left, ticks_encoder_read_right,
-           rpm_controled, controled_RPM_left,
-           controled_RPM_left);
+  // left wheel 
+  ros_data.ticks_encoder_left = ticks_encoder_left;
+  // ros_data.angle_encoder_left = angle_encoder_left;
+  // ros_data.rpm_encoder_left = rpm_encoder_left;
+  // ros_data.linear_vel_wheel_left = left_wheel_vel;
+  // ros_data.left_rad_cmd = left_rad_cmd;
+  // ros_data.left_rpm_cmd = left_rpm_cmd; 
+  // ros_data.controlled_rpm_left = controlled_RPM_left;
+  ros_data.controlled_pwm_left = left_pwm_cmd;
 
-  RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
+  // right wheel 
+  ros_data.ticks_encoder_right = ticks_encoder_right; 
+  // ros_data.angle_encoder_right = angle_encoder_right; 
+  // ros_data.rpm_encoder_right = rpm_encoder_right; 
+  // ros_data.linear_vel_wheel_right = right_wheel_vel;
+  // ros_data.right_rad_cmd = right_rad_cmd; 
+  // ros_data.right_rpm_cmd = right_rpm_cmd;
+  // ros_data.controlled_rpm_right = controlled_RPM_right; 
+  ros_data.controlled_pwm_right = right_pwm_cmd;
+
+  // Publish the updated data to ROS topics
+  ros_loop(ros_data);
+
+  // Run the micro-ROS executor to process incoming messages
+  ros_spin();
 }
