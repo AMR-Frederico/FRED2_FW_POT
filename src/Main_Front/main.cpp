@@ -13,8 +13,8 @@ Encoder encoder(34, 35, 36,39);   // Encoder pins
 MedianFilter encoder_right_filter(33, 0); 
 MedianFilter encoder_left_filter(33, 0); 
 
-Controller left_wheel(1.0f, 0.0f, 0.0f, 255.0f); 
-Controller right_wheel(1.0f, 0.0f, 0.0f, 255.0f); 
+Controller left_wheel(1.0f, 0.0f, 0.0f, 350.0f); 
+Controller right_wheel(1.0f, 0.0f, 0.0f, 350.0f); 
 
 void setup() {
   // Serial.begin(115200);
@@ -32,8 +32,8 @@ void loop() {
   // -------------------------------------------------------
   // Get cmd_vel from ROS
   // -------------------------------------------------------
-  float robot_linear_vel = getLinear(); 
-  float robot_angular_vel = -getAngular(); 
+  float robot_linear_vel =  getLinear(); 
+  float robot_angular_vel =  getAngular(); 
 
 
   // -------------------------------------------------------
@@ -154,7 +154,7 @@ void loop() {
   // -------------------------------------------------------
 
   // left wheel 
-  ros_data.ticks_encoder_left = ticks_encoder_left;
+  // ros_data.ticks_encoder_left = ticks_encoder_left;
   // ros_data.angle_encoder_left = angle_encoder_left;
   // ros_data.rpm_encoder_left = rpm_encoder_left;
   // ros_data.linear_vel_wheel_left = left_wheel_vel;

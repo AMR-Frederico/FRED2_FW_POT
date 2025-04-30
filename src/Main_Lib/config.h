@@ -98,13 +98,13 @@
 // Driver motor pins -> //! FRONT PCB 
 // -------------------------------------------------------
 
-#define  FM1_IN1  19
-#define  FM1_IN2  23
-#define  FM1_PWM  25
+#define  FM2_IN1  23
+#define  FM2_IN2  19
+#define  FM2_PWM  25
 
-#define  FM2_IN1  18
-#define  FM2_IN2  4
-#define  FM2_PWM  13
+#define  FM1_IN1  4
+#define  FM1_IN2  18
+#define  FM1_PWM  13
 
 
 
@@ -113,13 +113,13 @@
 // Driver motor pins -> //! BACK PCB 
 // -------------------------------------------------------
 
-#define  BM1_IN1  18
-#define  BM1_IN2  4
-#define  BM1_PWM  13
+#define  BM2_IN1  4
+#define  BM2_IN2  18
+#define  BM2_PWM  13
 
-#define  BM2_IN1  19
-#define  BM2_IN2  23
-#define  BM2_PWM  25
+#define  BM1_IN1  23
+#define  BM1_IN2  19
+#define  BM1_PWM  25
 
 
 
