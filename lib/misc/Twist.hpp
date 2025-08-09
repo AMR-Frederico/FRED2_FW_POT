@@ -4,9 +4,9 @@
 class Twist{
 
 public:
-    float linear_vel, angular_vel;    
+    float linear, angular;    
     Twist(){};
-    Twist(float linear_vel, float angular_vel): linear_vel(linear_vel), angular_vel(angular_vel){};
+    Twist(float linear_vel, float angular_vel): linear(linear_vel), angular(angular_vel){};
 
 };
 

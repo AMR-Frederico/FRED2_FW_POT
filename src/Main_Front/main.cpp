@@ -2,10 +2,11 @@
 #include <Main_Lib/encoder.h>
 #include <Main_Lib/MedianFilter.h>
 #include <Main_Lib/micro_ros.h>
-#include <Main_Lib/kinematics.h>
+#include <Main_Lib/kinematics.hpp>
 #include "power.h"
-#include <Main_Lib/pid_controller.h>
-#include <PIDController.hpp>
+#include <Main_Lib/pid_controller.hpp>
+#include <PIDConfig.hpp>
+#include <Twist.hpp>
 
 RosData ros_data; // Instance of our RosData struct
 
@@ -15,9 +16,18 @@ MedianFilter encoder_right_filter(33, 0);
 MedianFilter encoder_left_filter(33, 0); 
 
 
+PIDConfig pid_config = PIDConfig(1.0f, 0.0f, 0.0f); 
+Controller left_wheel(pid_config, 350.0f); 
+Controller right_wheel(pid_config, 350.0f); 
 
-Controller left_wheel(1.0f, 0.0f, 0.0f, 350.0f); 
-Controller right_wheel(1.0f, 0.0f, 0.0f, 350.0f); 
+
+Twist get_vel_from_ros(void){
+  
+  float linear_vel =  getLinear(); 
+  float angular_vel =  getAngular(); 
+  return Twist(linear_vel, angular_vel);
+
+}
 
 void setup() {
   // Serial.begin(115200);
@@ -35,8 +45,9 @@ void loop() {
   // -------------------------------------------------------
   // Get cmd_vel from ROS
   // -------------------------------------------------------
-  float robot_linear_vel =  getLinear(); 
-  float robot_angular_vel =  getAngular(); 
+  // float robot_linear_vel =  getLinear(); 
+  // float robot_angular_vel =  getAngular();
+  Twist robot_vel = get_vel_from_ros();
 
 
   // -------------------------------------------------------
@@ -66,8 +77,8 @@ void loop() {
   // -------------------------------------------------------
   // Robot kinematics  - in m/s
   // -------------------------------------------------------  
-  float left_wheel_vel = kinematics_left(robot_linear_vel, robot_angular_vel, 1.0); 
-  float right_wheel_vel = kinematics_right(robot_linear_vel, robot_angular_vel, 1.0); 
+  float left_wheel_vel = Kinematics::kinematics_left(robot_vel, 1.0); 
+  float right_wheel_vel = Kinematics::kinematics_right(robot_vel, 1.0); 
 
   
   
