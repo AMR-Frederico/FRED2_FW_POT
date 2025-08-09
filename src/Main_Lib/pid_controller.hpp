@@ -1,6 +1,7 @@
 #include "config.h"
-#ifndef CONTROLER // include guard
-#define CONTROLER
+#ifndef CONTROLLER_HPP // include guard
+#define CONTROLLER_HPP
+#include <PIDConfig.hpp>
 
 class Controller {
     public:
@@ -8,8 +9,10 @@ class Controller {
       /// @param ki Integral gain
       /// @param kd Derivative gain
       /// @param output_limit If >0, clamp |output| ≤ this; else no clamp
-      Controller(float kp, float ki, float kd, float output_limit = 0.0f);
-    
+      Controller(const PIDConfig& pid_config, float output_limit = 0.0f);
+
+
+
       /// Compute the control output
       /// @param setpoint Desired value
       /// @param measurement Current value

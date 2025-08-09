@@ -1,4 +1,4 @@
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 
 // -------------------------------------------------------
 // Controller Class Constructor
@@ -12,8 +12,8 @@
  * @param kd Derivative gain.
  * @param out_lim Output saturation limit.
  */
-Controller::Controller(float kp, float ki, float kd, float out_lim)
-: Kp(kp), Ki(ki), Kd(kd),
+Controller::Controller(const PIDConfig& pid_config, float out_lim)
+: Kp(pid_config.kp), Ki(pid_config.ki), Kd(pid_config.kd),
   integral(0.0f),
   last_error(0.0f),
   last_time_ms(millis()),
