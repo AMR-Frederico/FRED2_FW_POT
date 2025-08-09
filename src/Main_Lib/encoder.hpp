@@ -1,11 +1,17 @@
 
 
-#ifndef ENCODER_H // include guard
-#define ENCODER_H
+#ifndef ENCODER_HPP // include guard
+#define ENCODER_HPP
   
   #include <Arduino.h>
   #define LEFT   0
   #define RIGHT  1
+
+  struct EncoderData{
+    double angle_encoder;
+    double rpm_encoder;
+    double ticks_encoder;
+  };
 
   class Encoder
   {
@@ -15,6 +21,7 @@
       double readPulses(int encoder_side);
       double readAngle(int encoder_side);
       double readRPM(int encoder_side);
+      EncoderData get_encoder_data(int id);
       void debugPrint();
       void reset();
       int DI_ENCODER_CH_AL;

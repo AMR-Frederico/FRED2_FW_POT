@@ -1,6 +1,6 @@
 
 
- #include "encoder.h" // header in local directory
+ #include "encoder.hpp" // header in local directory
 
 
 //--------------------------------------------------
@@ -581,4 +581,14 @@ void Encoder:: debugPrint() {
 
     Serial.println();
 
+}
+
+EncoderData Encoder::get_encoder_data(int id){
+  
+    
+    double angle = readAngle(id);
+    double rpm =  readRPM(id);
+    double ticks = readPulses(id);
+
+    return EncoderData{angle, rpm, ticks};
 }
