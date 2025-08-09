@@ -5,6 +5,7 @@
 #include <Main_Lib/kinematics.h>
 #include "power.h"
 #include <Main_Lib/pid_controller.h>
+#include <PIDController.hpp>
 
 RosData ros_data; // Instance of our RosData struct
 
@@ -12,6 +13,8 @@ Encoder encoder(34, 35, 36,39);   // Encoder pins
 
 MedianFilter encoder_right_filter(33, 0); 
 MedianFilter encoder_left_filter(33, 0); 
+
+
 
 Controller left_wheel(1.0f, 0.0f, 0.0f, 350.0f); 
 Controller right_wheel(1.0f, 0.0f, 0.0f, 350.0f); 
