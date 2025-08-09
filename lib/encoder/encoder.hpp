@@ -8,9 +8,9 @@
   #define RIGHT  1
 
   struct EncoderData{
-    double angle_encoder;
-    double rpm_encoder;
-    double ticks_encoder;
+    double angle;
+    double rpm;
+    double ticks;
   };
 
   class Encoder

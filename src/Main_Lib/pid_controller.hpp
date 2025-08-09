@@ -16,7 +16,7 @@ class Controller {
       /// Compute the control output
       /// @param setpoint Desired value
       /// @param measurement Current value
-      float compute(float setpoint, float measurement);
+      float compute_pid_control(float setpoint, float measurement);
     
       /// Print internal state over Serial (call after compute())
       void debug() const;

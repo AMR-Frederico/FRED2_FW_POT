@@ -33,7 +33,7 @@ Controller::Controller(const PIDConfig& pid_config, float out_lim)
  * @param measurement Current measured value.
  * @return Control signal after applying PID calculation and output limiting.
  */
-float Controller::compute(float setpoint, float measurement) {
+float Controller::compute_pid_control(float setpoint, float measurement) {
   unsigned long now = millis();
   float dt = (now - last_time_ms) * 1e-3f;  // Convert elapsed time from ms to seconds
   last_time_ms = now;
