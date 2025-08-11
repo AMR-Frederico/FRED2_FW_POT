@@ -1,10 +1,10 @@
 #include <Arduino.h>
 #include <encoder.hpp>
-#include <Main_Lib/MedianFilter.h>
-#include <Main_Lib/micro_ros.h>
+#include <MedianFilter.h>
+#include <micro_ros.h>
 #include <kinematics.hpp>
-#include "power.h"
-#include <Main_Lib/pid_controller.hpp>
+#include "power.hpp"
+#include <pid_controller.hpp>
 #include <PIDConfig.hpp>
 #include <Twist.hpp>
 #include <RightAndLeftValues.hpp>
