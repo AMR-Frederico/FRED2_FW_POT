@@ -18,8 +18,8 @@ MedianFilter encoder_left_filter(33, 0);
 
 
 PIDConfig pid_config = PIDConfig(1.0f, 0.0f, 0.0f); 
-Controller left_wheel(pid_config, 350.0f); 
-Controller right_wheel(pid_config, 350.0f); 
+PIDController left_wheel(pid_config, 350.0f); 
+PIDController right_wheel(pid_config, 350.0f); 
 
 
 
@@ -83,8 +83,16 @@ RightAndLeftValues<float> get_pwm_control(RightAndLeftValues<float>& cmd_rpm_tar
 
 void setup() {
 
-  init_ros("fred2_fw_motors", "front");
+  #ifdef FRONT_DRIVE
+    init_ros("fred2_fw_motors", "front");
+  
+  #elif defined(BACK_DRIVE)
+    init_ros("fred2_fw_motors", "back");
 
+  #else
+    #error "You must define BACK_DRIVE or FRONT_DRIVE"
+  #endif
+  
   encoder.setup();
 }
 
