@@ -62,6 +62,7 @@ void loop() {
 
   Twist robot_vel = get_vel_from_ros();
   RightAndLeftValues<EncoderData> encoders_data = get_encoders_data(encoder);
+  controller.Control(robot_vel, encoders_data);
   
   
 
