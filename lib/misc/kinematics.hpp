@@ -5,8 +5,8 @@
 #include <Twist.hpp>
 
 // Global variables
-float cmd_rpm;   // Global command RPM setpoint
-bool debug = false; // Debug mode flag
+// float cmd_rpm;   // Global command RPM setpoint
+// bool debug = false; // Debug mode flag
 
 // -------------------------------------------------------
 // Kinematics debug control
@@ -17,9 +17,9 @@ bool debug = false; // Debug mode flag
  * 
  * @return true if debug mode is enabled, false otherwise.
  */
-bool debugControl() {
-  return debug;
-}
+// bool debugControl() {
+//   return debug;
+// }
 
 // -------------------------------------------------------
 // Get RPM setpoint
@@ -30,9 +30,9 @@ bool debugControl() {
  * 
  * @return Current command RPM.
  */
-float getRPMsetpoint() {
-  return cmd_rpm;
-}
+// float getRPMsetpoint() {
+//   return cmd_rpm;
+// }
 
 // -------------------------------------------------------
 // Calculate left wheel angular velocity

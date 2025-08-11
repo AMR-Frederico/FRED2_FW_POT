@@ -7,8 +7,8 @@
 // @vel: PWM signal between 0 and 1023
 // Positive or negative represents direction (positive = forward)
 
-motor motor1(BM1_IN1, BM1_IN2, BM1_PWM, 0); // Motor 1 instance
-motor motor2(BM2_IN1, BM2_IN2, BM2_PWM, 1); // Motor 2 instance
+motor motor1(M1_IN1, M1_IN2, M1_PWM, 0); // Motor 1 instance
+motor motor2(M2_IN1, M2_IN2, M2_PWM, 1); // Motor 2 instance
 
 // Global variables
 int pwm_right = 0;

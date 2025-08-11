@@ -93,6 +93,27 @@
 
 
 
+#ifdef FRONT_DRIVE
+
+#define  M2_IN1  23
+#define  M2_IN2  19
+#define  M2_PWM  25
+
+#define  M1_IN1  4
+#define  M1_IN2  18
+#define  M1_PWM  13
+
+#elif defined(BACK_DRIVE)
+
+#define  M2_IN1  4
+#define  M2_IN2  18
+#define  M2_PWM  13
+
+#define  M1_IN1  23
+#define  M1_IN2  19
+#define  M1_PWM  25
+
+#endif
 
 // -------------------------------------------------------
 // Driver motor pins -> //! FRONT PCB 
