@@ -1,7 +1,7 @@
 #if !defined(KINEMATICS_HPP)
 #define KINEMATICS_HPP
 
-#include <Main_Lib/config.h>
+#include <config.h>
 #include <Twist.hpp>
 
 // Global variables

@@ -1,15 +1,18 @@
 #include "config.h"
-#ifndef CONTROLLER_HPP // include guard
-#define CONTROLLER_HPP
+#ifndef PID_CONTROLLER_HPP // include guard
+#define PID_CONTROLLER_HPP
 #include <PIDConfig.hpp>
+#include "Arduino.h"
 
-class Controller {
+
+class PIDController {
     public:
       /// @param kp Proportional gain
       /// @param ki Integral gain
       /// @param kd Derivative gain
       /// @param output_limit If >0, clamp |output| ≤ this; else no clamp
-      Controller(const PIDConfig& pid_config, float output_limit = 0.0f);
+      PIDController(const PIDConfig& pid_config);
+      PIDController(){};
 
 
 

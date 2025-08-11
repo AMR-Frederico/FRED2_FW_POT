@@ -1,4 +1,5 @@
 #include "pid_controller.hpp"
+#include "Arduino.h"
 
 // -------------------------------------------------------
 // Controller Class Constructor
@@ -12,12 +13,12 @@
  * @param kd Derivative gain.
  * @param out_lim Output saturation limit.
  */
-Controller::Controller(const PIDConfig& pid_config, float out_lim)
+PIDController::PIDController(const PIDConfig& pid_config)
 : Kp(pid_config.kp), Ki(pid_config.ki), Kd(pid_config.kd),
   integral(0.0f),
   last_error(0.0f),
   last_time_ms(millis()),
-  output_limit(out_lim),
+  output_limit(pid_config.output_limit),
   last_output(0.0f),
   last_derivative(0.0f) // For debugging derivative term
 {}
@@ -33,7 +34,7 @@ Controller::Controller(const PIDConfig& pid_config, float out_lim)
  * @param measurement Current measured value.
  * @return Control signal after applying PID calculation and output limiting.
  */
-float Controller::compute_pid_control(float setpoint, float measurement) {
+float PIDController::compute_pid_control(float setpoint, float measurement) {
   unsigned long now = millis();
   float dt = (now - last_time_ms) * 1e-3f;  // Convert elapsed time from ms to seconds
   last_time_ms = now;
@@ -75,7 +76,7 @@ float Controller::compute_pid_control(float setpoint, float measurement) {
 /**
  * @brief Prints current PID components and control output to Serial for debugging.
  */
-void Controller::debug() const {
+void PIDController::debug() const {
   Serial.print("P: "); Serial.print(Kp * last_error, 3);
   Serial.print(" | I: "); Serial.print(Ki * integral, 3);
   Serial.print(" | D: "); Serial.print(Kd * last_derivative, 3);

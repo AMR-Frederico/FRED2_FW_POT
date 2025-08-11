@@ -1,6 +1,9 @@
-#include <Main_Lib/motor.h>
-#include <Main_Lib/tools.h>
-#include <Main_Lib/config.h>
+#ifndef POWER_HPP
+#define POWER_HPP
+
+#include <motor.h>
+#include <tools.h>
+#include <config.h>
 
 // fred(linear(m/s),angular(rad/s)) -> |cinematic| -> wheel(angular(rad/s)) -> |angular2rpm| -> wheel(angular(rpm)) -> |rpm2pwm| -> wheel(pwm)
 
@@ -56,16 +59,6 @@ void write_PWM(motor motor, int vel) {
 // Converts linear velocity (m/s) to angular velocity (rad/s)
 // -------------------------------------------------------
 
-/**
- * @brief Convert a linear velocity (m/s) into wheel angular velocity (rad/s).
- * 
- * @param linear_vel Linear velocity (meters per second).
- * @return Angular velocity (radians per second).
- */
-float meters2rad(float linear_vel) {
-  float cmd_rad = linear_vel / WHEEL_RADIUS;
-  return cmd_rad;
-}
 
 // -------------------------------------------------------
 // Converts angular velocity (rad/s) to RPM
@@ -160,3 +153,6 @@ void write2motor(int rpm, int motor) {
       write_PWM(motor1, pwm_motor); // Default to motor1 if invalid input
   }
 }
+
+
+#endif //POWER_HPP
