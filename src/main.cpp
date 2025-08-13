@@ -8,8 +8,10 @@
 #include <PIDConfig.hpp>
 #include <Twist.hpp>
 #include <RightAndLeftValues.hpp>
-
+#include <Preferences.h>
 #include <controller.hpp>
+
+#define CALIB_VAR "calibmode"
 
 RosData ros_data; // Instance of our RosData struct
 
@@ -21,7 +23,8 @@ MedianFilter encoder_left_filter(33, 0);
 
 PIDConfig pid_config = PIDConfig(1.0f, 0.0f, 0.0f, 350.0f); 
 Controller controller(pid_config);
-
+Preferences prefs;
+bool calib_mode = false;
 
 
 Twist get_vel_from_ros(void){
@@ -44,6 +47,14 @@ RightAndLeftValues<EncoderData> get_encoders_data(Encoder& encoder){
 
 void setup() {
 
+  pinMode(0, INPUT_PULLUP);
+  pinMode(2, OUTPUT);
+  digitalWrite(2, 0);
+  Serial.begin(115200);
+  prefs.begin("storage", false);
+  calib_mode = prefs.getBool(CALIB_VAR, false);
+  prefs.end();
+
   #ifdef FRONT_DRIVE
     init_ros("fred2_fw_motors", "front");
   
@@ -57,9 +68,26 @@ void setup() {
   encoder.setup();
 }
 
+void handle_debug_switch(){
+  if(digitalRead(0) == LOW){
+    calib_mode = !calib_mode;
+    prefs.begin("storage", false);
+    prefs.putBool(CALIB_VAR, calib_mode);
+    prefs.end();
+    delay(500); // debounce
+  }
+}
+int i = 0;
+int ith = 100;
 void loop() {
-
-
+  i++;
+  if(calib_mode)
+  {
+    digitalWrite(2, i > ith/2);
+    i = i > ith? 0 : i;
+  }
+  handle_debug_switch();
+  
   Twist robot_vel = get_vel_from_ros();
   RightAndLeftValues<EncoderData> encoders_data = get_encoders_data(encoder);
   controller.Control(robot_vel, encoders_data);
