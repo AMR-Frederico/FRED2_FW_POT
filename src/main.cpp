@@ -10,6 +10,7 @@
 #include <RightAndLeftValues.hpp>
 #include <Preferences.h>
 #include <controller.hpp>
+#include <memory>
 
 #define CALIB_VAR "calibmode"
 
@@ -20,10 +21,9 @@ Encoder encoder(34, 35, 36,39);   // Encoder pins
 MedianFilter encoder_right_filter(33, 0); 
 MedianFilter encoder_left_filter(33, 0); 
 
-
-PIDConfig pid_config = PIDConfig(1.0f, 0.0f, 0.0f, 350.0f); 
-Controller controller(pid_config);
 Preferences prefs;
+float kp, ki, kd;
+std::unique_ptr<Controller> controller;
 bool calib_mode = false;
 
 
@@ -50,16 +50,25 @@ void setup() {
   pinMode(0, INPUT_PULLUP);
   pinMode(2, OUTPUT);
   digitalWrite(2, 0);
-  Serial.begin(115200);
+  
+
   prefs.begin("storage", false);
   calib_mode = prefs.getBool(CALIB_VAR, false);
+  kp = prefs.getFloat("kp", 1.0f);
+  ki = prefs.getFloat("ki", 0.0f);
+  kd = prefs.getFloat("kd", 0.0f);
   prefs.end();
+  
+  
+  PIDConfig pid_config = PIDConfig(kp, ki, kd, 350.0f); 
+  controller = std::unique_ptr<Controller>( new Controller(pid_config));
+  
 
   #ifdef FRONT_DRIVE
-    init_ros("fred2_fw_motors", "front");
+    init_ros("fred2_fw_motors", "front", calib_mode);
   
   #elif defined(BACK_DRIVE)
-    init_ros("fred2_fw_motors", "back");
+    init_ros("fred2_fw_motors", "back", calib_mode);
 
   #else
     #error "You must define BACK_DRIVE or FRONT_DRIVE"
@@ -83,6 +92,7 @@ void loop() {
   i++;
   if(calib_mode)
   {
+    
     digitalWrite(2, i > ith/2);
     i = i > ith? 0 : i;
   }
@@ -90,7 +100,7 @@ void loop() {
   
   Twist robot_vel = get_vel_from_ros();
   RightAndLeftValues<EncoderData> encoders_data = get_encoders_data(encoder);
-  controller.Control(robot_vel, encoders_data);
+  controller->Control(robot_vel, encoders_data);
   
   
 
@@ -98,7 +108,7 @@ void loop() {
   // ROS data
   // -------------------------------------------------------
 
-  RightAndLeftValues<float> pwm_cmd = controller.get_pwm_cmd();
+  RightAndLeftValues<float> pwm_cmd = controller->get_pwm_cmd();
   ros_data.controlled_pwm_left = pwm_cmd.left;
   ros_data.controlled_pwm_right = pwm_cmd.right;
   ros_data.ticks_encoder_right = encoders_data.right.ticks; 

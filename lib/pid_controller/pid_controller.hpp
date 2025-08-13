@@ -13,6 +13,7 @@ public:
   /// @param output_limit If >0, clamp |output| ≤ this; else no clamp
   PIDController(const PIDConfig& pid_config);
   PIDController(){};
+  void update_pid(const PIDConfig& pid_config);
 
 
 

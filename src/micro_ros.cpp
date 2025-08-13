@@ -7,7 +7,13 @@
 
 // --- Global Variables for micro-ROS communication ---
 rcl_subscription_t cmd_vel_subscriber;                ///< Subscriber for velocity commands
+rcl_subscription_t kp_calib_subscriber;
+rcl_subscription_t ki_calib_subscriber;
+rcl_subscription_t kd_calib_subscriber;
 geometry_msgs__msg__Twist cmd_vel_msg;                 ///< Message structure for received Twist
+std_msgs__msg__Float32 kp_msg;
+std_msgs__msg__Float32 ki_msg;
+std_msgs__msg__Float32 kd_msg;
 rclc_executor_t executor;                             ///< micro-ROS executor to handle callbacks
 rcl_allocator_t allocator;                            ///< Allocator for memory management
 rclc_support_t support;                               ///< micro-ROS support structure
@@ -36,7 +42,7 @@ std_msgs__msg__Float32 controlled_pwm_right_msg;
 unsigned long last_cmd_vel_time = 0;      ///< Timestamp of last received cmd_vel
 float speed_linear = 0.0;                 ///< Latest linear speed (m/s)
 float speed_angular = 0.0;                ///< Latest angular speed (rad/s)
-
+float kp_, ki_, kd_;
 // --- Macro Helpers for Error Checking ---
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
@@ -72,6 +78,20 @@ void subscription_callback(const void *msgin) {
   last_cmd_vel_time = millis();
 }
 
+void kp_callback(const void* msgin) {
+    const std_msgs__msg__Float32* msg = (const std_msgs__msg__Float32*) msgin;
+    kp_ = msg->data;
+}
+
+void ki_callback(const void* msgin) {
+    const std_msgs__msg__Float32* msg = (const std_msgs__msg__Float32*) msgin;
+    ki_ = msg->data;
+}
+
+void kd_callback(const void* msgin) {
+    const std_msgs__msg__Float32* msg = (const std_msgs__msg__Float32*) msgin;
+    kd_ = msg->data;
+}
 // -------------------------------------------------------
 // Getters for latest received commands
 // -------------------------------------------------------
@@ -119,7 +139,7 @@ void check_cmd_vel_timeout() {
  * @param node_name Name of the micro-ROS node.
  * @param node_namespace Namespace for the node.
  */
-void init_ros(const char* node_name, const char* node_namespace) {
+void init_ros(const char* node_name, const char* node_namespace, bool calib) {
   set_microros_transports();
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
@@ -135,6 +155,25 @@ void init_ros(const char* node_name, const char* node_namespace) {
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
     "/cmd_vel/safe"));
+  if(calib){
+    RCCHECK(rclc_subscription_init_default(
+    &kp_calib_subscriber,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
+    "/calib/kp"));
+
+    RCCHECK(rclc_subscription_init_default(
+    &ki_calib_subscriber,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
+    "/calib/ki"));
+
+    RCCHECK(rclc_subscription_init_default(
+    &kd_calib_subscriber,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
+    "/calib/kd"));
+  }
 
   // --- Publishers ---
   RCCHECK(rclc_publisher_init_default(
@@ -162,8 +201,16 @@ void init_ros(const char* node_name, const char* node_namespace) {
     "power/controlled/pwm/right"));
 
   // --- Executor ---
-  RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+  int num_nodes_executor = calib? 4 : 1;
+  RCCHECK(rclc_executor_init(&executor, &support.context, num_nodes_executor, &allocator));
   RCCHECK(rclc_executor_add_subscription(&executor, &cmd_vel_subscriber, &cmd_vel_msg, &subscription_callback, ON_NEW_DATA));
+  
+  if(calib){
+
+    RCCHECK(rclc_executor_add_subscription(&executor, &kp_calib_subscriber, &kp_msg, &kp_callback, ON_NEW_DATA));
+    RCCHECK(rclc_executor_add_subscription(&executor, &ki_calib_subscriber, &ki_msg, &ki_callback, ON_NEW_DATA));
+    RCCHECK(rclc_executor_add_subscription(&executor, &kd_calib_subscriber, &kd_msg, &kd_callback, ON_NEW_DATA));
+  }
 }
 
 // -------------------------------------------------------

@@ -27,7 +27,7 @@ struct RosData {
 };
 
 // Function declarations
-void init_ros(const char* node_name, const char* node_namespace);
+void init_ros(const char* node_name, const char* node_namespace, bool calib);
 void ros_loop(const RosData& data);
 void ros_spin();
 

@@ -69,6 +69,12 @@ float PIDController::compute_pid_control(float setpoint, float measurement) {
   return u;
 }
 
+void PIDController::update_pid(const PIDConfig& pid_config){
+  Kp = pid_config.kp;
+  Ki = pid_config.ki;
+  Kd = pid_config.kd;
+}
+
 // -------------------------------------------------------
 // Debugging Output for PID Terms
 // -------------------------------------------------------
