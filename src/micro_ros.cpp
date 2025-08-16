@@ -4,7 +4,7 @@
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 #include <rcl/error_handling.h>
-
+#include <PIDConfig.hpp>
 // --- Global Variables for micro-ROS communication ---
 rcl_subscription_t cmd_vel_subscriber;                ///< Subscriber for velocity commands
 rcl_subscription_t kp_calib_subscriber;
@@ -105,6 +105,7 @@ float getLinear() {
   return speed_linear; 
 }
 
+
 /**
  * @brief Get the latest received angular speed command.
  * 
@@ -114,6 +115,9 @@ float getAngular() {
   return speed_angular; 
 }
 
+PIDConfig get_pid_conf(){
+  return PIDConfig(kp_, ki_, kd_);
+}
 // -------------------------------------------------------
 // Check cmd_vel message timeout
 // -------------------------------------------------------

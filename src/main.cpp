@@ -35,6 +35,7 @@ Twist get_vel_from_ros(void){
 
 }
 
+
 RightAndLeftValues<EncoderData> get_encoders_data(Encoder& encoder){
 
   EncoderData encoder_right = encoder.get_encoder_data(RIGHT);
@@ -54,6 +55,8 @@ void setup() {
 
   prefs.begin("storage", false);
   calib_mode = prefs.getBool(CALIB_VAR, false);
+  // force to embbebed electronics
+  // calib_mode = true;
   kp = prefs.getFloat("kp", 1.0f);
   ki = prefs.getFloat("ki", 0.0f);
   kd = prefs.getFloat("kd", 0.0f);
@@ -97,6 +100,11 @@ void loop() {
     i = i > ith? 0 : i;
   }
   handle_debug_switch();
+  if(debug_mode){
+    controller->
+    PIDConfig new_pid = get_pid_config();
+    controller->right_wheel_pid.update_pid(new_pid);
+  }
   
   Twist robot_vel = get_vel_from_ros();
   RightAndLeftValues<EncoderData> encoders_data = get_encoders_data(encoder);
