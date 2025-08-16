@@ -1,9 +1,11 @@
+#include <Arduino.h>
 #include "micro_ros.h"
-#include <micro_ros_arduino.h>
+#include <micro_ros_platformio.h>
 #include <stdio.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 #include <rcl/error_handling.h>
+
 
 // --- Global Variables for micro-ROS communication ---
 rcl_subscription_t cmd_vel_subscriber;                ///< Subscriber for velocity commands
@@ -14,11 +16,9 @@ rclc_support_t support;                               ///< micro-ROS support str
 rcl_node_t node;                                       ///< micro-ROS Node
 
 // Publishers for encoder data
-rcl_publisher_t encoder_ticks_right_pub;
-std_msgs__msg__Int32 encoder_ticks_right_msg;
+rcl_publisher_t encoder_ticks_pub;
+custom_message__msg__Encoder encoder_msg; 
 
-rcl_publisher_t encoder_ticks_left_pub;
-std_msgs__msg__Int32 encoder_ticks_left_msg;
 
 // Additional publishers are commented for future extension
 
@@ -120,7 +120,8 @@ void check_cmd_vel_timeout() {
  * @param node_namespace Namespace for the node.
  */
 void init_ros(const char* node_name, const char* node_namespace) {
-  set_microros_transports();
+  Serial.begin(115200);
+  set_microros_serial_transports(Serial);
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   delay(2000);
@@ -138,16 +139,10 @@ void init_ros(const char* node_name, const char* node_namespace) {
 
   // --- Publishers ---
   RCCHECK(rclc_publisher_init_default(
-    &encoder_ticks_right_pub,
+    &encoder_ticks_pub,
     &node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-    "power/encoder/ticks/right"));
-
-  RCCHECK(rclc_publisher_init_default(
-    &encoder_ticks_left_pub,
-    &node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-    "power/encoder/ticks/left"));
+    ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Encoder),
+    "power/encoder"));
 
   RCCHECK(rclc_publisher_init_default(
     &controlled_pwm_left_pub,
@@ -176,13 +171,16 @@ void init_ros(const char* node_name, const char* node_namespace) {
  * @param data Struct containing the encoder and control data (RosData type).
  */
 void ros_loop(const RosData& data) {
-  encoder_ticks_right_msg.data = data.ticks_encoder_right;
-  encoder_ticks_left_msg.data = data.ticks_encoder_left;
+  encoder_msg.left_ticks = data.ticks_encoder_left;
+  encoder_msg.right_ticks = data.ticks_encoder_right;
+  encoder_msg.stamp.nanosec = (uint32_t)(rmw_uros_epoch_nanos() % 1000000000ULL);
+  encoder_msg.stamp.sec = (int32_t)(rmw_uros_epoch_nanos() / 1000000000ULL);
+
+
   controlled_pwm_left_msg.data = data.controlled_pwm_left;
   controlled_pwm_right_msg.data = data.controlled_pwm_right;
 
-  RCSOFTCHECK(rcl_publish(&encoder_ticks_right_pub, &encoder_ticks_right_msg, NULL));
-  RCSOFTCHECK(rcl_publish(&encoder_ticks_left_pub, &encoder_ticks_left_msg, NULL));
+  RCSOFTCHECK(rcl_publish(&encoder_ticks_pub, &encoder_msg, NULL));
   RCSOFTCHECK(rcl_publish(&controlled_pwm_left_pub, &controlled_pwm_left_msg, NULL));
   RCSOFTCHECK(rcl_publish(&controlled_pwm_right_pub, &controlled_pwm_right_msg, NULL));
 

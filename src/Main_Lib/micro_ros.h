@@ -2,6 +2,7 @@
 #include <std_msgs/msg/int32.h>
 #include <geometry_msgs/msg/twist.h>
 #include <std_msgs/msg/float32.h>
+#include <custom_message/msg/encoder.h>
 
 // Structure to group all the necessary data
 struct RosData {

@@ -1,7 +1,0 @@
-{
-  "package_name": "my_custom_message",
-  "output_dir": "/home/dinossaurobebado/OPROJETO/Fred/FIrmware/FRED2_FW_POT/build/rosidl_generator_type_description/my_custom_message",
-  "idl_tuples": [
-    "/home/dinossaurobebado/OPROJETO/Fred/FIrmware/FRED2_FW_POT/build/rosidl_adapter/my_custom_message:msg/MyCustomMessage.idl"
-  ]
-}
