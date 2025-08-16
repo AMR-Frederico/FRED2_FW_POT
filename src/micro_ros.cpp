@@ -115,7 +115,7 @@ float getAngular() {
   return speed_angular; 
 }
 
-PIDConfig get_pid_conf(){
+PIDConfig get_pid_config(){
   return PIDConfig(kp_, ki_, kd_);
 }
 // -------------------------------------------------------

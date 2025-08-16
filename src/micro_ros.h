@@ -2,6 +2,7 @@
 #include <std_msgs/msg/int32.h>
 #include <geometry_msgs/msg/twist.h>
 #include <std_msgs/msg/float32.h>
+#include <PIDConfig.hpp>
 
 // Structure to group all the necessary data
 struct RosData {
@@ -34,3 +35,4 @@ void ros_spin();
 // Utility functions for getting velocities
 float getLinear();
 float getAngular();
+PIDConfig get_pid_config(void);

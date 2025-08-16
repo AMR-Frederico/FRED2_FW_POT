@@ -100,8 +100,7 @@ void loop() {
     i = i > ith? 0 : i;
   }
   handle_debug_switch();
-  if(debug_mode){
-    controller->
+  if(calib_mode){
     PIDConfig new_pid = get_pid_config();
     controller->right_wheel_pid.update_pid(new_pid);
   }
