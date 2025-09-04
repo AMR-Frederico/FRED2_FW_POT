@@ -5,14 +5,6 @@
 // Controller Class Constructor
 // -------------------------------------------------------
 
-/**
- * @brief Initializes the PID controller with given gains and output limits.
- * 
- * @param kp Proportional gain.
- * @param ki Integral gain.
- * @param kd Derivative gain.
- * @param out_lim Output saturation limit.
- */
 PIDController::PIDController(const PIDConfig& pid_config)
 : Kp(pid_config.kp), Ki(pid_config.ki), Kd(pid_config.kd),
   integral(0.0f),
@@ -27,13 +19,6 @@ PIDController::PIDController(const PIDConfig& pid_config)
 // Compute PID Output
 // -------------------------------------------------------
 
-/**
- * @brief Computes the PID control signal based on the setpoint and current measurement.
- * 
- * @param setpoint Desired target value.
- * @param measurement Current measured value.
- * @return Control signal after applying PID calculation and output limiting.
- */
 float PIDController::compute_pid_control(float setpoint, float measurement) {
   unsigned long now = millis();
   float dt = (now - last_time_ms) * 1e-3f;  // Convert elapsed time from ms to seconds
@@ -43,7 +28,11 @@ float PIDController::compute_pid_control(float setpoint, float measurement) {
   float error = setpoint - measurement;
 
   // --- Proportional term ---
+  Kp = 1;
   float P = Kp * error;
+  Serial.print("Kp: ");
+  Serial.print(Kp);
+  Serial.print("\t");
 
   // --- Integral term (with accumulation) ---
   integral += error * dt;
@@ -70,7 +59,7 @@ float PIDController::compute_pid_control(float setpoint, float measurement) {
 }
 
 void PIDController::update_pid(const PIDConfig& pid_config){
-  Kp = pid_config.kp;
+  Kp = pid_config.kp; 
   Ki = pid_config.ki;
   Kd = pid_config.kd;
 }
@@ -79,9 +68,6 @@ void PIDController::update_pid(const PIDConfig& pid_config){
 // Debugging Output for PID Terms
 // -------------------------------------------------------
 
-/**
- * @brief Prints current PID components and control output to Serial for debugging.
- */
 void PIDController::debug() const {
   Serial.print("P: "); Serial.print(Kp * last_error, 3);
   Serial.print(" | I: "); Serial.print(Ki * integral, 3);

@@ -29,10 +29,12 @@ bool calib_mode = false;
 
 Twist get_vel_from_ros(void){
   
+  // float linear_vel = 2.0; 
+  // float angular_vel =  0.0;
   float linear_vel =  getLinear(); 
   float angular_vel =  getAngular(); 
-  return Twist(linear_vel, angular_vel);
 
+  return Twist(linear_vel, angular_vel);
 }
 
 
@@ -52,6 +54,7 @@ void setup() {
   pinMode(2, OUTPUT);
   digitalWrite(2, 0);
   
+  Serial.begin(115200);
 
   prefs.begin("storage", false);
   calib_mode = prefs.getBool(CALIB_VAR, false);
@@ -109,8 +112,6 @@ void loop() {
   RightAndLeftValues<EncoderData> encoders_data = get_encoders_data(encoder);
   controller->Control(robot_vel, encoders_data);
   
-  
-
   // -------------------------------------------------------
   // ROS data
   // -------------------------------------------------------
