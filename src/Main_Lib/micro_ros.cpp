@@ -9,7 +9,8 @@
 
 // --- Global Variables for micro-ROS communication ---
 rcl_subscription_t cmd_vel_subscriber;                ///< Subscriber for velocity commands
-geometry_msgs__msg__Twist cmd_vel_msg;                 ///< Message structure for received Twist
+custom_message__msg__Vel cmd_vel_msg;                 ///< Message structure for received Twist
+
 rclc_executor_t executor;                             ///< micro-ROS executor to handle callbacks
 rcl_allocator_t allocator;                            ///< Allocator for memory management
 rclc_support_t support;                               ///< micro-ROS support structure
@@ -19,6 +20,7 @@ rcl_node_t node;                                       ///< micro-ROS Node
 rcl_publisher_t encoder_ticks_pub;
 custom_message__msg__Encoder encoder_msg; 
 
+extern RosData ros_data; 
 
 // Additional publishers are commented for future extension
 
@@ -27,6 +29,9 @@ std_msgs__msg__Float32 controlled_pwm_left_msg;
 
 rcl_publisher_t controlled_pwm_right_pub; 
 std_msgs__msg__Float32 controlled_pwm_right_msg; 
+
+rcl_publisher_t latency_pub;
+std_msgs__msg__Int64 latency_msg; // Int64 é bom para microssegundos
 
 // --- Constants ---
 #define LED_PIN 2                        ///< Onboard LED pin for error indication
@@ -66,9 +71,28 @@ void error_loop() {
  * @param msgin Pointer to received message (geometry_msgs::msg::Twist).
  */
 void subscription_callback(const void *msgin) {
-  const geometry_msgs__msg__Twist *msg = (const geometry_msgs__msg__Twist *)msgin;
+  // 1. Captura o tempo de recebimento no ESP32 (em microssegundos)
+  long long receive_time_us = (long long)micros();
+
+  // 2. Faz o cast da mensagem para o tipo correto (Vel)
+  const custom_message__msg__Vel *msg = (const custom_message__msg__Vel *)msgin;
+
+  // 3. Extrai o timestamp de publicação do Pi e converte para microssegundos
+  long long publish_time_sec = msg->stamp.sec;
+  long long publish_time_nanosec = msg->stamp.nanosec;
+  long long publish_time_us = (publish_time_sec * 1000000LL) + (publish_time_nanosec / 1000LL);
+
+  // 4. Calcula a latência! Este é o dado principal do seu experimento.
+  long long latency_us = receive_time_us - publish_time_us;
+  
+  // 4.1 Salva a latência na struct global
+  ros_data.latency_us = latency_us; // <<< ALTERAÇÃO IMPORTANTE
+
+  // 5. Extrai as velocidades como antes, mas da nova estrutura da mensagem
   speed_linear = msg->linear.x;
-  speed_angular = msg->angular.z;
+  speed_angular = msg->angular.z; // Geralmente o robô 2D gira no eixo Z
+
+  // 6. Atualiza o timestamp do último comando recebido para o timeout
   last_cmd_vel_time = millis();
 }
 
@@ -134,7 +158,7 @@ void init_ros(const char* node_name, const char* node_namespace) {
   RCCHECK(rclc_subscription_init_default(
     &cmd_vel_subscriber,
     &node,
-    ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
+    ROSIDL_GET_MSG_TYPE_SUPPORT(custom_message, msg, Vel),
     "/cmd_vel/safe"));
 
   // --- Publishers ---
@@ -155,6 +179,12 @@ void init_ros(const char* node_name, const char* node_namespace) {
     &node,
     ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float32),
     "power/controlled/pwm/right"));
+
+  RCCHECK(rclc_publisher_init_default(
+    &latency_pub,
+    &node,
+    ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int64),
+    "firmware/latency"));
 
   // --- Executor ---
   RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
@@ -179,10 +209,16 @@ void ros_loop(const RosData& data) {
 
   controlled_pwm_left_msg.data = data.controlled_pwm_left;
   controlled_pwm_right_msg.data = data.controlled_pwm_right;
+  
+  
+  latency_msg.data = data.latency_us;
+
 
   RCSOFTCHECK(rcl_publish(&encoder_ticks_pub, &encoder_msg, NULL));
   RCSOFTCHECK(rcl_publish(&controlled_pwm_left_pub, &controlled_pwm_left_msg, NULL));
   RCSOFTCHECK(rcl_publish(&controlled_pwm_right_pub, &controlled_pwm_right_msg, NULL));
+  RCSOFTCHECK(rcl_publish(&latency_pub, &latency_msg, NULL));
+
 
   check_cmd_vel_timeout();
 }

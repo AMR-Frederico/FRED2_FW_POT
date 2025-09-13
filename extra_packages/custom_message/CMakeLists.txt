@@ -11,10 +11,12 @@ find_package(rosidl_default_generators REQUIRED)
 
 find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Encoder.msg"
-   DEPENDENCIES std_msgs builtin_interfaces
+  "msg/Vel.msg"
+   DEPENDENCIES std_msgs builtin_interfaces geometry_msgs
 )
 
 

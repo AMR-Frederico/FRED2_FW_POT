@@ -1,8 +1,10 @@
 #include <rcl/rcl.h>
 #include <std_msgs/msg/int32.h>
+#include <std_msgs/msg/int64.h>
 #include <geometry_msgs/msg/twist.h>
 #include <std_msgs/msg/float32.h>
 #include <custom_message/msg/encoder.h>
+#include <custom_message/msg/vel.h>
 
 // Structure to group all the necessary data
 struct RosData {
@@ -24,6 +26,7 @@ struct RosData {
     // float  controlled_rpm_right;
     float  controlled_pwm_left;
     float  controlled_pwm_right;
+    long long latency_us;
 
 };
 
